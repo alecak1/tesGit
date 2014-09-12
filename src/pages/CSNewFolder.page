@@ -1,0 +1,54 @@
+<!--
+    Copyright (c)2010, David Van Puyvelde, Sales Engineering, Salesforce.com Inc.
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+    Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 
+    Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+    Neither the name of the�salesforce.com nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission. 
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+    INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+    CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
+    EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<apex:page standardController="Collaboration_Space_Folder__c" extensions="CSNewFolderController" showheader="false" sidebar="false" id="fpage">
+
+    <script type="text/javascript">
+        function saveFolder() {
+            var tree = window.opener.recordsTree;
+            tree.getLoader().load(tree.root);
+            window.close();
+        }
+    </script>
+
+    <apex:form id="fform">
+
+    <apex:pageBlock id="fblock">
+        <apex:pageMessages id="messages"/>
+        
+        <apex:pageBlockButtons >
+            <!-- <apex:commandButton value="Save" action="{!save}" onclick="setCsField();" oncomplete="window.opener.location.href='/{!Collaboration_Space_Folder__c.Collaboration_Space__c}';window.close();" rerender="messages"/> -->
+            <apex:commandButton value="Save" action="{!save}" onclick="setCsField();" oncomplete="saveFolder();" rerender="messages"/>
+            <input type="button" value="Cancel" class="btn" onclick="window.close();"/>
+        </apex:pageBlockButtons>
+        <apex:pageBlockSection id="ffields">
+            <apex:inputField value="{!Collaboration_Space_Folder__c.Name}"/>
+            <apex:inputHidden value="{!Collaboration_Space_Folder__c.Collaboration_Space__c}" id="csfield"/>
+        </apex:pageBlockSection>
+    </apex:pageBlock>
+
+    </apex:form>
+    
+    <script type="text/javascript">
+        function setCsField() {
+            var csfield = document.getElementById('{!$Component.fpage.fform.fblock.ffields.csfield}');
+            csfield.value = '{!JSENCODE($CurrentPage.Parameters.csid)}';
+        }
+    </script>
+
+</apex:page>

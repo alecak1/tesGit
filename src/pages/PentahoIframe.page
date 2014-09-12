@@ -1,0 +1,3 @@
+<apex:page sidebar="false">
+  <apex:iframe src="https://eu1.salesforce.com/apex/pentaho" scrolling="true" id="theIframe"/>
+</apex:page>

@@ -1,0 +1,88 @@
+<!--
+    Copyright (c)2010, David Van Puyvelde, Sales Engineering, Salesforce.com Inc.
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+    Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 
+    Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+    Neither the name of the�salesforce.com nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission. 
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+    INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+    CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
+    EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<apex:page controller="CSAddRecordController" tabStyle="Collaboration_Space__c" sidebar="false" showheader="false">
+
+    <script type="text/javascript">
+        function done() {
+            var tree = window.opener.recordsTree;
+            tree.getLoader().load(tree.root);
+            window.close();
+        }
+    </script>
+
+    <table width="100%">
+    <tr>
+    <td valign="top" width="300">
+    <apex:form >
+
+    <apex:PageMessages id="messages"/>
+    
+        <apex:pageBlock >
+
+            <apex:pageBlockSection title="Search records to attach" columns="1">
+            <!-- SEARCH -->
+                <apex:outputPanel >
+                    <apex:selectList value="{!selectedObject}" size="1">
+                        <apex:selectOptions value="{!objectSelectOptions}"/>            
+                    </apex:selectList>
+                    &nbsp;
+                    <apex:inputText value="{!searchterm}"/>
+                    &nbsp;
+                    <apex:commandButton value="Search" action="{!searchRecords}" status="status" rerender="resultspanel, messages"/>
+                    &nbsp;
+                    <!-- <input type="button" value="Done" class="btn" onclick="window.opener.location.href='/{!JSINHTMLENCODE($CurrentPage.Parameters.spaceid)}';window.close();"/>  -->
+                    <input type="button" value="Done" class="btn" onclick="done();"/>
+                    &nbsp;
+                    <input type="button" value="Cancel" class="btn" onclick="window.close();"/>
+                    &nbsp;
+                    <!-- Action Status -->
+                    <apex:actionStatus stopText="" id="status"> 
+                        <apex:facet name="start">               
+                            <apex:image url="{!URLFOR($Resource.CSResources, '/Icons/Colored/GIF/ajax-loader.gif')}" title="Wait..."/>                                    
+                        </apex:facet>
+                    </apex:actionStatus>                
+                </apex:outputPanel>
+            
+            </apex:pageBlockSection>
+            <!-- SEARCH RESULTS -->
+            <apex:outputpanel id="resultspanel">
+                <apex:pageBlockSection title="Search Results" columns="1">
+                    <apex:pageBlockTable value="{!searchresults}" var="r">
+                        <apex:column headerValue="Name">
+                            <a onclick="document.getElementById('searchpane').src = '/{!r.id}'">{!r.name}</a>
+                        </apex:column>
+                        <apex:column headervalue="Attach">
+                            <apex:commandLink action="{!addRecord}" status="status" rerender="messages">
+                                <apex:param name="sfid" value="{!r.Id}"></apex:param>
+                                <apex:image url="{!URLFOR($Resource.CSResources, '/Icons/Colored/PNG/action_add.png')}" title="Attach"/>
+                             </apex:commandLink>
+                        </apex:column>
+                    </apex:pageBlockTable>
+                </apex:pageBlockSection>
+            </apex:outputpanel>
+        </apex:pageBlock>
+
+    </apex:form>
+    </td>
+    <td>
+        <iframe id="searchpane" src ="/home/home.jsp" width="100%" height="1000"/>
+    </td>
+    </tr>
+    </table>
+</apex:page>

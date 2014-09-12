@@ -1,0 +1,495 @@
+<apex:page sidebar="false">
+
+
+<head>
+<title>Tbridge Integration</title>
+
+
+<SCRIPT LANGUAGE="javascript">
+
+//DA IMPOSTARE A 1 PER ATTIVARE I TRACE SIEBEL (CLIENT DEDICATO)
+//<> 1 SE RILASCIATO SUL SERVER!!!!
+var debug = 0;
+
+var logEvent=true;
+
+var LoginCTI;
+var LoginEMAIL; 
+var AbilitaCTI;
+var LoginName;  
+
+var KeepAlive;
+
+var axLoaded=false;
+var axStarted=false;
+var logEnabled=false;
+var count=0;
+var count2=0;
+var timer1=null;
+var i=0;
+var counter1=0;
+var counter2=0;
+var myarray = new Array(50);
+var busyIndex = 0;
+var trash = "";
+
+var queuedEvents = new Array(1000);
+var qeIndex=0;
+var qeIndex2=0;
+var timerInterval=200;
+
+var sCheckStart;
+
+
+
+function isClosed() {
+
+    var closed=false;
+    if (typeof(top.winWait) != "undefined") {
+        if (typeof(top.winWait.closed) != "undefined") {
+            if (top.winWait.closed == true) {
+                closed = true;
+            }
+        }
+    }
+
+    return closed;
+}
+
+function log(message) {
+
+    if (logEnabled==true) {
+        if (typeof(top.window.status) != "undefined") {
+            top.window.status=message;
+        }
+    }
+
+}
+
+
+
+
+function startup() 
+{
+    if(debug == 1)
+    {
+        alert("TBridge Check");
+    }
+    var TBridgeStart="Y";//top.theApplication().GetProfileAttr("TBridgeStart"); 
+    if (TBridgeStart!="Y") return;
+    
+    try
+    {
+        var AvviaBarra = "Y"//propout.GetProperty("AvviaBarra");
+        
+        if(debug == 1)
+        {
+            alert("TBridge Start");
+            alert("AvviaBarra="+AvviaBarra);
+        }
+        
+        if(AvviaBarra=="Y")
+        {
+        
+            // Avvio Check Login
+            var RetVal = true;
+        
+            startComm();
+            setKeepAlive();
+            keepAliveCheck();
+        }
+        
+        propin = null;
+        propout = null;
+        service = null;
+    }
+    catch(e)
+    {
+
+    }
+}
+
+function GetValueOfName(commatext, name){
+    name=name + '=';
+    var retval="";
+    var start =commatext.indexOf(name);
+    var stop;
+    if (start>=0){
+        start+=name.length;
+        var len=commatext.length;
+        for (stop=start; ((commatext.charAt(stop)!=',') && (stop<len)); stop++);
+        
+        if (stop > start) 
+            retval=commatext.substring(start, stop);
+    }
+    if ( retval == "") retval = "None";
+    return retval;
+}
+
+function GetValueFromAtt(commatext, name){
+    name=name + ',';
+    var retval="";
+    var start =commatext.indexOf(name);
+    var stop;
+    if (start>=0){
+        start+=name.length;
+        var len=commatext.length;
+        for (stop=start; ((commatext.charAt(stop)!=',') && (stop<len)); stop++);
+        
+        if (stop > start) 
+            retval=commatext.substring(start, stop);
+    }
+    if ( retval == "") retval = "None";
+    return retval;
+}
+
+function cleanParam(toclean,characterToRemove,characterToInsert){
+    var cleaned = toclean.replace(characterToRemove,characterToInsert);
+    return cleaned;
+}
+
+
+function checkQueue() 
+{
+
+    if (qeIndex2 != qeIndex) 
+    {
+        if (true) 
+        {
+            top.SetBusy(true);
+
+            var ev = queuedEvents[qeIndex];
+            qeIndex++;
+            if (qeIndex == 1000) 
+            {
+                qeIndex=0;
+            }
+            
+            /**** PREPARSING DELL'EVENTO - INIZIO ****/
+            var Evento = GetValueOfName(ev, "Evento");
+            if(Evento=="LinkOK")
+            {
+                if(sCheckStart=="OK")
+                {
+                    DoLoginTB();
+                }
+            }
+            if ((Evento == "READY")||(Evento == "NOTREADY"))
+            {
+                SiebelReadyNotReady(Evento);
+            }
+            
+            /*
+            * Event data header
+            *       Used
+            */
+            var CallType = GetValueOfName(ev, "CallType");
+            
+            /*
+            * Getting GSW_CAMPAIGN_ID here to understand in the following "if" condition if the current scenario is
+            * Outbound call campaign scenario or not. This allow the script to call or not the BS "FW NCBS_TBridge"
+            * and consequently the workflow "FW Bar Call Management WF" that manage contact entity. In this way the 
+            * workflow "FW Bar Call Management WF" doesn't need to be modified because the scenarios of interest (to be
+            * stored in CONTACT BAR table) are filtered by swt javascript code.
+            */
+            var sCampaignId= GetValueFromAtt(ev, "GSW_CAMPAIGN_ID");
+
+        if ((Evento == "CALL" && CallType=="INBOUND") || (Evento == "CALL" && CallType=="OUTBOUND" && sCampaignId!="None") || (Evento == "DIALOUTCALL" && CallType=="OUTBOUND"))
+
+            {
+                if(debug==1)
+                {
+                    alert(ev);
+                }
+
+                /*
+                * Event data header
+                *   Unused
+                */
+                var strAsset = GetValueOfName(ev, "CLID");
+                var ThisQueue = GetValueOfName(ev, "ThisQueue");
+                var ThisDN = GetValueOfName(ev, "ThisDN");
+                var OtherDN = GetValueOfName(ev, "OtherDN");
+                
+                /*
+                *  Event AttachData 
+                *   Used
+                */
+                var IVR_CONNID = GetValueFromAtt(ev, "IVR_CONNID");
+                var CONNID = GetValueOfName(ev, "CONNID");
+                var FIRST_CONNID = GetValueFromAtt(ev, "FIRST_CONNID");
+                var sAccountNumber = GetValueFromAtt(ev, "ACCOUNT");
+                var sVag1 = GetValueFromAtt(ev, "SP_TARGET"); //Vag for no campaign out call scenario
+                var sVag = cleanParam(sVag1,"\"",""); //Cleaning Vag for no campaign out call scenario
+                var sAni = GetValueFromAtt(ev, "ANI");
+                //Outbound calls scenario
+                var sOutboundCallNum="";
+                
+                if(CallType=="OUTBOUND"){
+                    if(Evento=="CALL"){
+                        sOutboundCallNum = GetValueFromAtt(ev,"GSW_PHONE");
+                        sVag = GetValueFromAtt(ev, "GSW_CAMPAIGN_GROUP_NAME"); //Vag for campaign out call scenario
+                    }else if (Evento=="DIALOUTCALL"){
+                        sOutboundCallNum = GetValueOfName(ev,"DNIS");
+                    }
+                }
+
+                //Outbound call campaign scenario parameter, searched in all cases
+                var sCampaignName= GetValueFromAtt(ev, "GSW_CAMPAIGN_NAME");
+                
+                
+                /*
+                *  Event AttachData 
+                *   Unused
+                */
+                var DNIS = GetValueOfName(ev, "DNIS");
+                var Servizio = GetValueFromAtt(ev, "SP_DT_SERVIZIO");
+                var sNumTelInbound = GetValueFromAtt(ev, "SP_DT_TEL");
+                var DCoda = GetValueFromAtt(ev, "Dest_Queue");
+                var CF = GetValueFromAtt(ev, "SP_DT_CF");
+                var PI = GetValueFromAtt(ev, "SP_DT_PIVA");
+                var TCoda = GetValueFromAtt(ev, "Target_Queue"); //old version
+                //BAD var sAccountNumber = GetValueFromAtt(ev, "SP_DT_ACCOUNT"); //commentato per test!
+                //var sIdUO = GetValueFromAtt(ev, "SP_DT_IDORD"); //commentato per test!
+                
+                if(debug == 1)
+                {
+                    alert("sAccountNumber="+sAccountNumber);
+                }
+    
+        //*****************************************************************     
+        //R.M. Qui possono essere gestiti tutti gli eventi provenienti dalla barra telefonica.
+    
+                var service = top.theApplication().GetService("FW NCBS_TBridge");
+                var propin  = top.theApplication().NewPropertySet();
+                var propout = top.theApplication().NewPropertySet();
+    
+                propin.SetProperty("Evento", Evento);
+                propin.SetProperty("CallType", CallType);
+                if (CallType=="INBOUND")
+                {
+                    propin.SetProperty("CLID", sNumTelInbound);
+                }
+                else
+                {
+                    propin.SetProperty("CLID", strAsset);
+                }
+                propin.SetProperty("ThisQueue", ThisQueue); 
+                propin.SetProperty("ThisDN", ThisDN);
+                propin.SetProperty("OtherDN", OtherDN);
+                propin.SetProperty("CF", CF);
+                propin.SetProperty("PI", PI);
+                propin.SetProperty("TCoda", TCoda); 
+                propin.SetProperty("DCoda", DCoda);
+                propin.SetProperty("VAG", sVag);
+                propin.SetProperty("Servizio", Servizio);
+                propin.SetProperty("DNIS", DNIS);
+                propin.SetProperty("IVR_CONNID", IVR_CONNID);
+                propin.SetProperty("CONNID", CONNID);
+                propin.SetProperty("FIRSTCONNID", FIRST_CONNID);
+                propin.SetProperty("Debug",debug);
+                propin.SetProperty("AccountNumber",sAccountNumber);
+                //propin.SetProperty("IdUO",sIdUO);
+                propin.SetProperty("OutboundCallNum",sOutboundCallNum);
+                propin.SetProperty("ANI",sAni);
+                
+                propin.SetProperty("CampaignId",sCampaignId); 
+                propin.SetProperty("CampaignName",sCampaignName); 
+                
+                if(debug == 1)
+                {
+                    alert("Calling Business Service");
+                }
+                
+                service.InvokeMethod("GestioneChiamate", propin,propout);
+    
+        //*****************************************************************
+            }
+            top.SetBusy(false);
+        }
+    }
+    setTimeout("checkQueue()", timerInterval);
+}
+
+function startQueueTimer() {
+    checkQueue();
+}
+
+function loadQueue() {
+    var num = form1.text2.value;
+    for (var i=0; i<num; i++) {
+        queuedEvents[qeIndex2]="EVENTO_" + i;
+        qeIndex2++;
+    }
+}
+
+function queueNewEvent(event) {
+    queuedEvents[qeIndex2]=event;
+    qeIndex2++;
+    if (qeIndex2 == 1000) {
+        qeIndex2=0;
+    }
+}
+
+function setTimerInterval() {
+    timerInterval =form1.text1.value;
+}
+
+function SiebelReadyNotReady(Ev){
+    var service = top.theApplication().GetService("FW NCBS_TBridge");
+    var propinCTI   = top.theApplication().NewPropertySet();
+    var propoutCTI  = top.theApplication().NewPropertySet();
+    propinCTI.SetProperty("Evento", Ev);
+    propinCTI.SetProperty("Debug",debug);
+    service.InvokeMethod("SetCTIAgentState", propinCTI,propoutCTI);
+}
+
+function setKeepAlive() {
+
+    if (axStarted == true)
+    {   
+        var serviceKeep = top.theApplication().GetService("FW NCBS_TBridge");
+        var propinKeep  = top.theApplication().NewPropertySet();
+        var propoutKeep = top.theApplication().NewPropertySet();
+        
+        propinKeep.SetProperty("Debug",debug);
+        propoutKeep = serviceKeep.InvokeMethod("KeepAlive", propinKeep);
+        
+        KeepAlive = propoutKeep.GetProperty("KeepAlive");
+        if(debug == 1)
+        {
+            alert("KeepAlive="+KeepAlive);
+        }
+        CtiKernelMaxW.SetKeepAlive(KeepAlive);
+
+    }
+            
+    propinKeep  = null;
+    propoutKeep = null;
+    serviceKeep = null;
+    
+}
+
+function keepAliveCheck() {
+
+    if ((axStarted == true) && (debug == 1))
+    {   
+        var serviceKeep = top.theApplication().GetService("FW NCBS_TBridge");
+        var propinKeep  = top.theApplication().NewPropertySet();
+        var propoutKeep = top.theApplication().NewPropertySet();
+                
+        var KACheck = CtiKernelMaxW.GetKeepAlive();
+        propinKeep.SetProperty("Debug",debug);
+        propinKeep.SetProperty("KACheck",KACheck);
+        propoutKeep = serviceKeep.InvokeMethod("KeepAliveCheck", propinKeep);
+    }
+            
+    propinKeep  = null;
+    propoutKeep = null;
+    serviceKeep = null;
+    
+}
+
+function startComm() {
+        
+    if (axLoaded == false) {
+        if ((typeof(CtiKernelMaxW) != "undefined") && (CtiKernelMaxW != null)) {
+            axLoaded=true;
+        }
+    }
+    
+    if (axStarted == false) {
+        if (axLoaded == true) {
+            
+            LoginName=""//GetLogin();
+            if (LoginName!="")
+            {
+                CtiKernelMaxW.CreateCtiKernel();
+                CtiKernelMaxW.CfgServerHost = "";
+                CtiKernelMaxW.CfgServerPort = "";
+                CtiKernelMaxW.UserName = LoginName; //SOLO PER IL SYSTEM TEST!!!
+                CtiKernelMaxW.UserPassword = "";
+                sCheckStart = CtiKernelMaxW.ReadCfgServer1();
+                
+                if(sCheckStart=="NOK")
+                {
+                    alert("Impossibile avviare TBridge!");
+                }
+                else if (sCheckStart=="RUNNING")
+                {
+                    DoLoginTB();
+                    var sReady = CtiKernelMaxW.GetFunctionEnaStatus("Ready");
+
+                    var sEvento;
+                    if (sReady=="0")
+                    {
+                        sEvento = "READY";
+                    }
+                    else
+                    {
+                        sEvento = "NOTREADY";
+                    }
+                    SiebelReadyNotReady(sEvento);
+                }
+            }
+            else
+            {
+                alert("Impossibile effettuare il Login Automatico!");
+                CtiKernelMaxW.CreateCtiKernel();
+                CtiKernelMaxW.SimpleStart();
+                delay(500);
+            }
+
+            startQueueTimer();
+            axStarted=true;
+        }
+    }
+    if (axStarted == false) {
+        setTimeout("startComm()", 500);
+    }
+}
+
+function DoLoginTB()
+{
+    CtiKernelMaxW.Login();
+}
+
+
+function delay(gap){
+    var then,now; 
+    then=new Date().getTime();
+    now=then;
+    while((now-then)<gap)
+        {now=new Date().getTime();}
+}
+
+
+function exitCTI() {
+    if (typeof(CtiKernelMaxW)!="undefined")
+     {
+         CtiKernelMaxW.DestroyCtiKernel();
+        }
+}
+
+</SCRIPT>
+</HEAD>
+<BODY>
+<!-- <BODY onload="startup()" onUnload="exitCTI()">
+<!-- <BODY>-->
+<object name="CtiKernelMaxW" id='CtiKernelMaxW1' width='0' height='0'
+ classid='clsid:B92BBE9D-BE6F-4E4F-8BDC-D712E458272A'>
+</object>
+    <SCRIPT LANGUAGE="JavaScript" FOR="CtiKernelMaxW" EVENT="OnNewCtiEvent(event)"> 
+        queueNewEvent(event);
+        if (logEvent==true)
+            alert(event);
+    </SCRIPT>
+    
+<p>&nbsp;</p>
+<form>
+<input type="button" name="Submit1" value="Avvia TBridge EC" onClick="startup()" />
+<input type="button" name="Submit2" value="Chiudi TBridge EC" onClick="exitCTI()" />
+</form>
+</BODY>
+
+</apex:page>

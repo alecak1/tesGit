@@ -1,0 +1,40 @@
+<apex:page sidebar="false" title="Flow Samples Pack">
+
+<style type="text/css">
+        body {
+            background: #C2D3FF;
+        }
+
+        p.FlowTitle {
+            font-size:25px;
+            font-weight: bold;
+            text-align: center;
+        } 
+        
+        .FlowContainer {
+            line-height: 150%;
+            margin-left: 50px;
+            margin-top: 10px;
+            padding: 50px 40px;
+            width: 800px;
+            background-color: #EEF6FF;
+            }
+            
+        body .bPageBlock .pbHeader{
+            background: #6B7C8E;
+        }
+
+        body .bPageBlock  .pbBottomButtons {
+            background: #6B7C8E;
+        }
+
+        body .bPageBlock .pbBody {
+        }
+        
+ 
+</style>
+
+<p class="FlowTitle"> Flow Samples Pack </p>
+
+    <flow:interview name="Flow_Samples_Browser"/>
+</apex:page>

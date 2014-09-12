@@ -1,0 +1,19 @@
+{
+    "username": "a.caio@reply.it", 
+    "environment": "production", 
+    "project_name": "ARLANIS_Organization_PROD", 
+    "workspace": "/Users/alessandrocaio/Desktop/Arlanis_Reply/WORKSPACES/MavenMate/", 
+    "org_url": "", 
+    "namespace": "", 
+    "id": "PXED03D4KPPX66660RWJ5TUPB0UA0U9N", 
+    "metadata_container": "1dcD0000000Gql6IAC", 
+    "subscription": [
+        "ApexClass", 
+        "ApexComponent", 
+        "ApexPage", 
+        "ApexTrigger", 
+        "CustomObject", 
+        "Profile", 
+        "StaticResource"
+    ]
+}

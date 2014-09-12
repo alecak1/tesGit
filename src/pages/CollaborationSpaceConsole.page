@@ -1,0 +1,655 @@
+<!--
+    Copyright (c)2010, David Van Puyvelde, Sales Engineering, Salesforce.com Inc.
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+    Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 
+    Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+    Neither the name of the�salesforce.com nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission. 
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+    INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+    CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
+    EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<apex:page standardController="Collaboration_Space__c" sidebar="false" showHeader="false" extensions="CollaborationSpaceConsoleExtension,CSRelatedInfoJSExtension">
+<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>  
+   
+    <title>Collaboration Console</title>
+    
+     <link rel="stylesheet" type="text/css" href="{!URLFOR($Resource.CSResources,'/EXT/ext-3.2.1clean/resources/css/ext-all.css')}"/>
+     <link rel="stylesheet" type="text/css" href="{!URLFOR($Resource.CSResources,'/UX/css/Portal.css')}" />
+     
+    <script type="text/javascript" src="{!URLFOR($Resource.CSResources,'/EXT/ext-3.2.1clean/adapter/ext/ext-base.js')}"></script>
+    <script type="text/javascript" src="{!URLFOR($Resource.CSResources,'/EXT/ext-3.2.1clean/ext-all.js')}"></script>
+
+    <!-- overrides to base library -->
+    <!-- extensions -->
+    <script type="text/javascript" src="{!URLFOR($Resource.CSResources,'/UX/Portal.js')}"></script>
+    <script type="text/javascript" src="{!URLFOR($Resource.CSResources,'/UX/PortalColumn.js')}"></script>
+
+    <script type="text/javascript" src="{!URLFOR($Resource.CSResources,'/UX/Portlet.js')}"></script>
+
+    <!--
+    		RELATED RECORDS TREE
+    -->
+    <script type="text/javascript">
+    	
+     	var Tree = Ext.tree;
+   
+	    var recordsTree = new Tree.TreePanel({
+		        // these are the config options that we need to define how the treePanel iteractes with the ViewPort when we attach it
+		        id:'recordstree',
+		        title:'Related Records (double click to open)',
+		        split:true,
+	            width: 200,
+	            minSize: 175,
+	            maxSize: 400,
+	            collapsible: true,
+	            margins:'35 0 5 5',
+	            cmargins:'35 5 5 5',
+	            
+	            // these are the config options for the tree itself             
+	            autoScroll:true,
+	            animate:true,
+	            enableDD:true, // Allow tree nodes to be moved (dragged and dropped)
+	            containerScroll: true,
+	            loader: new Tree.TreeLoader({
+	                preloadChildren: true,
+	                dataUrl:'/apex/CSFoldersJS?id={!Collaboration_Space__c.Id}'
+	            }),
+	            // this adds a root node to the tree and tells it to expand when it is rendered
+	            root: new Tree.AsyncTreeNode({
+	                text: 'Folders',
+	                draggable:false,
+	                expanded:true,
+	                id:'root'
+	             }),
+	             rootVisible: false,
+	             tbar: [{
+	                    iconCls: 'icon-user-add',
+	                    text: 'Folders',
+	                    menu: [
+	                    	{
+	                    		text: 'Add Folder',
+	                    		handler: function(){
+			                    	var url = "/apex/CSNewFolder?csid={!Collaboration_Space__c.Id}&retURL=%2F{!Collaboration_Space__c.Id}";
+			                        window.open (url,"mywindow","status=1,scrollbars=yes,width=400,height=200");
+			                    }
+	                    	},
+	                    	{
+	                    		text: 'Delete Folder',
+	                    		handler: function(){
+			                        var node = recordsTree.getSelectionModel().getSelectedNode();
+			                        //only accept if a record is selected (sfdcrecord attribute is only available on records)
+			                        if(node.attributes.sfdcrecord) {
+			                                Ext.Msg.show({
+				                            title:'Warning',
+				                            msg: 'To delete a folder, select it first',
+				                            buttons: Ext.Msg.OK,
+				                            animEl: 'elId',
+				                            icon: Ext.MessageBox.WARNING
+				                            });                                             
+			                        } 
+			                        else {
+			                        	var nodeid = node.id;
+			                            node.destroy();
+			                            deleteFolder(nodeid);		                            
+			                        }           
+			                    }
+	                    	}
+	                    ]
+	                    
+	                },
+	                {
+	                    iconCls: 'icon-user-add',
+	                    text: 'Records',
+	                    menu: [
+	                    	{
+		                    	text:'Attach',
+		                    	handler: function() {
+		                    		var node = recordsTree.getSelectionModel().getSelectedNode();
+			                        if(node == null) {
+			                            Ext.Msg.show({
+			                               title:'Warning',
+			                               msg: 'Please select a folder first',
+			                               buttons: Ext.Msg.OK,
+			                               animEl: 'elId',
+			                               icon: Ext.MessageBox.WARNING
+			                            });
+			                            return;
+			                        }
+			                        //don't accept if no folder is selected (sfdcrecord attribute is only available on records)
+			                        if(node.attributes.sfdcrecord) {
+			                            Ext.Msg.show({
+			                               title:'Warning',
+			                               msg: 'Records need to be attached to folders, please select a folder first',
+			                               buttons: Ext.Msg.OK,
+			                               animEl: 'elId',
+			                               icon: Ext.MessageBox.WARNING
+			                            });                         
+			                            return;
+			                        }
+			                        //if we click on a folder, just use the node id         
+			                        var url = "/apex/CSAddRecord?folderid="+node.id+'&foldername='+node.text+'&spaceid={!Collaboration_Space__c.Id}';
+			                        window.open (url,"mywindow","status=1,scrollbars=yes,width=1000,height=600");
+		                    	}
+		                    },
+	                    	{
+	                    		text: 'View',
+		                    	handler: function(){
+			                        var node = recordsTree.getSelectionModel().getSelectedNode();	                        
+			                        if(node != null && node.attributes.sfdcrecord) {
+			                            //if we click on a record, use the sfdcrecord custom attribute and open in new window
+			                            url = "/"+node.attributes.sfdcrecord;
+			                            window.open (url,"mywindow","status=1,scrollbars=yes");
+			                        }
+			                        else {
+			                            Ext.Msg.show({
+				                               title:'Message',
+				                               msg: 'Only records can be viewed. Please select a record first',
+				                               buttons: Ext.Msg.OK,
+				                               animEl: 'elId',
+				                               icon: Ext.MessageBox.INFO
+				                        }); 
+			                        }                       
+			                    }
+		                    },
+		                    {
+		                    	text:'Detach',
+		                    	handler: function() {
+		                    		    var node = recordsTree.getSelectionModel().getSelectedNode();
+				                        //only accept if a record is selected (sfdcrecord attribute is only available on records)
+				                        if(node.attributes.sfdcrecord) {
+				                            var nodeid = node.id;
+				                            node.destroy();
+				                            detachRecord(nodeid);                                                   
+				                        } 
+				                        else {
+				                            Ext.Msg.show({
+				                               title:'Warning',
+				                               msg: 'Only records can be detached.',
+				                               buttons: Ext.Msg.OK,
+				                               animEl: 'elId',
+				                               icon: Ext.MessageBox.WARNING
+				                            }); 
+				                        }
+		                    	}
+		                    }	                    
+	                    ]
+	                }
+	                ],
+	               listeners: {
+	                    'dblclick': function(node) {
+	                    	if(node.attributes.sfdcrecord) {
+	                            //if we click on a record, use the sfdcrecord custom attribute and open in new window
+	                            url = "/"+node.attributes.sfdcrecord;
+	                            window.open (url,"mywindow","status=1,scrollbars=yes");
+	                        }
+	                    }
+	                }
+	        });
+	    
+	
+	    
+	        // Add a listener to the tree to do something when a node is clicked.   
+	        recordsTree.addListener('click', function (node, event){
+	            //if we click on a folder, just use the node id         
+	            var url = "/"+node.id;
+	            //but if we click on a record, use the sfdcrecord custom attribute
+	            if(node.attributes.sfdcrecord) {
+	                url = "/"+node.attributes.sfdcrecord;
+	            }
+	            //window.open (url,"mywindow","status=1");              
+	        });
+	    
+	        // Add a listener to take some action when a node is moved. 
+	        //recordsTree.addListener('movenode', function (tree, node, oldParent, newParent, index){
+	        //     alert('moved. Old parent node id='+ oldParent.id+'. new parent node id='+newParent.id);
+	        //});
+    	
+    </script>
+    
+    <!-- 
+    					RELATED INFO
+     -->
+     
+    <script type="text/javascript">
+    
+    	 /*****************************************************************
+									DOCUMENTS
+		******************************************************************/
+		
+		 
+		DocumentsGrid = function(limitColumns){
+		
+		    var columns = [
+		        {id:'sfid',header: "Id", width: 30, hidden: true, sortable: true, dataIndex: 'sfid'},
+		        {id:'filename',header: "Name", width: 100, sortable: true, dataIndex: 'filename'},
+		        {id:'description',header: "Description", width: 200, sortable: true, dataIndex: 'description'}
+		    ];
+		
+		    DocumentsGrid.superclass.constructor.call(this, {
+		        store: new Ext.data.Store({
+		            reader: new Ext.data.ArrayReader({}, [
+		                    {name: 'sfid'},
+		                   {name: 'filename'},
+		                   {name: 'description'}
+		              ]),
+		            data: [
+		                <apex:repeat value="{!chatterdocuments}" var="c">
+		                    ['<apex:outputText value="{!c.id}"/>','<apex:outputText value="{!c.filename}"/>','<apex:outputText value="{!c.description}"/>']<apex:outputText value="," rendered="{!lastdocumentid != c.Id}"/>
+		                </apex:repeat>                
+		            ]
+		        }),
+		        columns: columns,
+		        autoExpandColumn: 'filename',
+		        height:150
+		        ,listeners: {
+		            rowclick : function (grid, row, e) {
+		                Ext.Msg.show({
+		                    title:'Message',
+		                    msg: 'Please preview or download files directly from the Chatter feed',
+		                    buttons: Ext.Msg.OK,
+		                    animEl: 'elId',
+		                    icon: Ext.MessageBox.INFO
+		                });             
+		            }
+		        }
+		    });
+		
+		
+		}
+		
+		Ext.extend(DocumentsGrid, Ext.grid.GridPanel);
+		
+		/*****************************************************************
+									LINKS
+		******************************************************************/
+		
+		
+		LinksGrid = function(limitColumns){
+		
+		    var columns = [
+		        {id:'sfid',header: "Id", width: 30, hidden: true, sortable: true, dataIndex: 'sfid'},
+		        {id:'title',header: "Title", width: 100, sortable: true, dataIndex: 'title'},
+		        {id:'link',header: "Link", width: 200, sortable: true, dataIndex: 'link'}
+		    ];
+		
+		    LinksGrid.superclass.constructor.call(this, {
+		        store: new Ext.data.Store({
+		            reader: new Ext.data.ArrayReader({}, [
+		                    {name: 'sfid'},
+		                   {name: 'title'},
+		                   {name: 'link'}
+		              ]),
+		            data: [
+		                <apex:repeat value="{!chatterlinks}" var="l">
+		                    ['<apex:outputText value="{!l.id}"/>','<apex:outputText value="{!l.title}"/>','<apex:outputText value="{!l.link}"/>']<apex:outputText value="," rendered="{!lastlinkid != l.Id}"/>
+		                </apex:repeat>                
+		            ]
+		        }),
+		        columns: columns,
+		        autoExpandColumn: 'title',
+		        height:150
+		        ,listeners: {
+		            rowclick : function (grid, row, e) {
+		                window.open(grid.store.data.items[row].data.link,"linkwindow","status=1","status=1,scrollbars=yes");                
+		            }
+		        }
+		        //width:500
+		    });
+		}
+		Ext.extend(LinksGrid, Ext.grid.GridPanel);
+				
+		
+		/*****************************************************************
+									MEMBERS
+		******************************************************************/
+		
+
+		
+		MembersGrid = function(limitColumns){
+		
+		    function italic(value){
+		        return '<i>' + value + '</i>';
+		    }
+		
+		    var columns = [
+		        {id:'sfid',header: "Id", width: 30, hidden: true, sortable: true, dataIndex: 'sfid'},
+		        {id:'fullname',header: "Name", width: 160, sortable: true, dataIndex: 'fullname'}
+		    ];
+		
+		    MembersGrid.superclass.constructor.call(this, {
+		        store: new Ext.data.Store({
+		            reader: new Ext.data.ArrayReader({}, [
+		                    {name: 'sfid'},
+		                   {name: 'fullname'}
+		              ]),
+		            data: [
+		                <apex:repeat value="{!followers}" var="f">
+		                    ['<apex:outputText value="{!f.Id}"/>','<apex:outputText value="{!f.Name}"/>']<apex:outputText value="," rendered="{!f.Id != lastfollowerid}"/>
+		                </apex:repeat>                
+		            ]
+		        }),
+		        columns: columns,
+		        autoExpandColumn: 'fullname',
+		        height:100,
+		        width:600,
+		        listeners: {
+		            rowclick : function (grid, row, e) {
+		                window.open ("/"+grid.store.data.items[row].data.sfid,"mywindow","status=1,scrollbars=yes");                
+		            }
+		        }
+		    });
+		
+		
+		}
+		
+		Ext.extend(MembersGrid, Ext.grid.GridPanel);
+		
+		
+		
+		/*****************************************************************
+									COLLABORATION GROUPS
+		******************************************************************/
+		
+		
+		GroupsGrid = function(limitColumns){
+		
+		    var columns = [
+		        {id:'sfid',header: "Id", width: 30, hidden: true, sortable: true, dataIndex: 'sfid'},
+		        {id:'groupname',header: "Name", width: 160, sortable: true, dataIndex: 'groupname'},
+		        {id:'groupid',header: "Group Id", width: 160, sortable: true, dataIndex: 'groupid'}
+		    ];
+		
+		    GroupsGrid.superclass.constructor.call(this, {
+		        store: new Ext.data.Store({
+		            reader: new Ext.data.ArrayReader({}, [
+		                    {name: 'sfid'},
+		                   {name: 'groupname'},
+		                   {name: 'groupid'}
+		              ]),
+		            data: [
+		                <apex:repeat value="{!groups}" var="g">
+		                    ['<apex:outputText value="{!g.Id}"/>','<apex:outputText value="{!g.Name}"/>','<apex:outputText value="{!g.Salesforce_Record__c}"/>']<apex:outputText value="," rendered="{!g.Id != lastgroupid}"/>
+		                </apex:repeat>                
+		            ]
+		        }),
+		        columns: columns,
+		        autoExpandColumn: 'groupname',
+		        height:100,
+		        width:600,		        
+		        listeners: {
+		            rowclick : function (grid, row, e) {
+		                window.open ("/"+grid.store.data.items[row].data.groupid,"mywindow","status=1,scrollbars=yes");                
+		            }
+		        }
+		    });
+		
+		
+		}
+		
+		Ext.extend(GroupsGrid, Ext.grid.GridPanel);
+		
+		var groupsgrid = new GroupsGrid();
+		
+		/*****************************************************************
+									MEETINGS
+		******************************************************************/
+		
+		
+		MeetingsGrid = function(limitColumns){
+		
+		    var columns = [
+		    	{id:'sfid',header: "Id", width: 30, hidden: true, sortable: true, dataIndex: 'sfid'},
+		        {id:'subject',header: "Subject", width: 100, sortable: true, dataIndex: 'subject'},
+		        {id:'starttime',header: "Start", width: 140, sortable: true, dataIndex: 'starttime'}
+		    ];
+		
+		    MeetingsGrid.superclass.constructor.call(this, {
+		        store: new Ext.data.Store({
+		            reader: new Ext.data.ArrayReader({}, [
+		            		{name: 'sfid'},
+		                   {name: 'subject'},
+		                   {name: 'starttime'}
+		              ]),
+		            data: [
+		            	<apex:repeat value="{!meetings}" var="m">
+							['<apex:outputText value="{!m.id}"/>','<apex:outputText value="{!m.Subject}"/>','<apex:outputText value="{0,date,dd MMMM yyyy}"><apex:param value="{!m.StartDateTime}" /></apex:outputText>']<apex:outputText value="," rendered="{!lastmeetingid != m.Id}"/>
+						</apex:repeat> 
+		            	]
+		        }),
+		        columns: columns,
+		        autoExpandColumn: 'subject',
+		        height:150,
+		        tbar: [{
+		            iconCls: 'icon-user-add',
+		            text: 'New Meeting',
+		            handler: function(){
+		                top.location.href='/00U/e?what_id={!Collaboration_Space__c.Id}&retURL=%2F{!Collaboration_Space__c.Id}';
+		            }
+		        }
+		        ]
+		        ,listeners: {
+					rowclick : function (grid, row, e) {
+						window.open ("/"+grid.store.data.items[row].data.sfid,"mywindow","status=1,scrollbars=yes");				
+					}
+				}
+		    });
+		
+		
+		}
+		
+		Ext.extend(MeetingsGrid, Ext.grid.GridPanel);
+		
+		
+		/*****************************************************************
+									TASKS
+		******************************************************************/
+		
+		TasksGrid = function(limitColumns){
+		
+		    var columns = [
+		    	{id:'sfid',header: "Id", width: 30, hidden: true, sortable: true, dataIndex: 'sfid'},
+		        {id:'subject',header: "Subject", width: 100, sortable: true, dataIndex: 'subject'},
+		        {id:'activitydate',header: "Due Date", width: 150, sortable: true, dataIndex: 'activitydate'}
+		    ];
+		
+		    TasksGrid.superclass.constructor.call(this, {
+		        store: new Ext.data.Store({
+		            reader: new Ext.data.ArrayReader({}, [
+		            		{name: 'sfid'},
+		                   {name: 'subject'},
+		                   {name: 'activitydate'}
+		              ]),
+		            data: [
+		            	<apex:repeat value="{!tasks}" var="t">
+							['<apex:outputText value="{!t.id}"/>','<apex:outputText value="{!t.Subject}"/>','<apex:outputText value="{0,date,dd MMM yyyy}"><apex:param value="{!t.ActivityDate}"/></apex:outputText>']<apex:outputText value="," rendered="{!lasttaskid != t.Id}"/>
+						</apex:repeat>                
+		            ]
+		        }),
+		        columns: columns,
+		        autoExpandColumn: 'subject',
+		        height:150,
+		        tbar: [{
+		            iconCls: 'icon-user-add',
+		            text: 'New Task',
+		            handler: function(){
+		                top.location.href='/00T/e?what_id={!Collaboration_Space__c.Id}&retURL=%2F{!Collaboration_Space__c.Id}';
+		            }
+		        }
+		        ]
+		        ,listeners: {
+					rowclick : function (grid, row, e) {
+						window.open ("/"+grid.store.data.items[row].data.sfid,"mywindow","status=1,scrollbars=yes");				
+					}
+				}
+		    });
+		
+		
+		}
+		
+		Ext.extend(TasksGrid, Ext.grid.GridPanel);
+    	
+    
+    </script>
+
+	<!-- 
+								COLLABORATION CONSOLE VIEWPORT
+	-->
+
+    <script type="text/javascript">
+    	Ext.onReady(function(){
+	
+	    Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
+	
+	
+	    Ext.BLANK_IMAGE_URL = '{!URLFOR($Resource.CSResources,'/EXT/ext-3.2.1clean/resources/images/default/s.gif')}';
+	
+	    // create some portlet tools using built in Ext tool ids
+	    var tools = [{
+	        id:'gear',
+	        handler: function(){
+	            //Ext.Msg.alert('Message', 'The Settings tool was clicked.');
+	        }
+	    },{
+	        id:'close',
+	        handler: function(e, target, panel){
+	            panel.ownerCt.remove(panel, true);
+	        }
+	    }];
+	    
+	    
+	
+	    var viewport = new Ext.Viewport({
+	        layout:'border',
+	        items:[{
+	            region:'west',
+	            id:'west-panel',
+	            title:'Salesforce',
+	            split:true,
+	            width: 200,
+	            minSize: 175,
+	            maxSize: 400,
+	            collapsible: true,
+	            margins:'35 0 5 5',
+	            cmargins:'35 5 5 5',
+	            layout:'accordion',
+	            layoutConfig:{
+	                animate:true
+	            },
+	            items: [
+	            recordsTree
+	            ]
+	        },{
+	            xtype:'portal',
+	            region:'center',
+	            margins:'35 5 5 0',
+	            items:[{
+	                columnWidth:.33,
+	                style:'padding:10px 0 10px 10px',
+	                items:[{
+	                    title: 'Description',
+	                    layout:'fit',
+	                    tools: tools,
+	                    height: 100,
+	                    html: '<div id="descriptionpanel">{!Collaboration_Space__c.Description__c}</div>',
+	                    tbar: [{
+	                        iconCls: 'icon-user-add',
+	                        text: 'Edit Description',
+	                        handler: function(){                            
+	                            var url = '/apex/CSDescription?id={!Collaboration_Space__c.Id}';
+	                            window.open (url,"mywindow","status=1,scrollbars=yes,width=450,height=200");
+	                        }
+	                    }
+	                    ]
+	                },{
+	                    title: 'Chatter Groups (from related Records)',
+	                    tools: tools,
+	                    items: groupsgrid
+	                },{
+	                    title: 'Members (Followers)',
+	                    tools: tools,
+	                    items: new MembersGrid()
+	                }           
+	                ]
+	            },{
+	                columnWidth:.33,
+	                style:'padding:10px 0 10px 10px',
+	                items:[
+	                {
+	                    title: 'Meetings',
+	                    layout:'fit',
+	                    tools: tools,
+	                    items: new MeetingsGrid()
+	                },{
+	                    title: 'Tasks',
+	                    tools: tools,
+	                    items: new TasksGrid()
+	                }
+	                ]
+	            },{
+	                columnWidth:.33,
+	                style:'padding:10px',
+	                items:[
+	                
+	                {
+	                    title: 'Chatter Documents',
+	                    tools: tools,
+	                    items: new DocumentsGrid()
+	                },{
+	                    title: 'Chatter Links',
+	                    tools: tools,
+	                    items: new LinksGrid()
+	                }                   
+	                ]
+	            }]
+	            
+	            /*
+	             * Uncomment this block to test handling of the drop event. You could use this
+	             * to save portlet position state for example. The event arg e is the custom 
+	             * event defined in Ext.ux.Portal.DropZone.
+	             */
+	//            ,listeners: {
+	//                'drop': function(e){
+	//                    Ext.Msg.alert('Portlet Dropped', e.panel.title + '<br />Column: ' + 
+	//                        e.columnIndex + '<br />Position: ' + e.position);
+	//                }
+	//            }
+	        }]
+	    });
+	});
+    </script>
+    
+    <!-- Controller Javascript hooks -->
+    <apex:form >
+        <apex:actionFunction name="detachRecord" action="{!detachRecord}" rerender="messages">
+            <apex:param name="sfid" value=""/>
+        </apex:actionFunction>
+        <apex:actionFunction name="deleteFolder" action="{!deleteFolder}" rerender="messages">
+            <apex:param name="sfid" value=""/>
+        </apex:actionFunction>
+        <apex:outputPanel id="messages">
+            <script type="text/javascript" id="msgscript">
+                    var msg = '{!JSENCODE(message)}';
+                    if(msg != '') {                     
+                        Ext.Msg.show({
+                           title:'Message',
+                           msg: msg,
+                           buttons: Ext.Msg.OK,
+                           animEl: 'elId',
+                           icon: Ext.MessageBox.{!IF(messagetype == null, 'INFO', messagetype)}
+                        });
+                        //alert('{!message}');
+                    }
+            </script>
+        </apex:outputPanel>
+        
+    </apex:form>
+    
+</apex:page>

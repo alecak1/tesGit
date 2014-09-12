@@ -1,0 +1,17 @@
+<apex:page standardController="Case" showHeader="false">
+<apex:form >
+    <apex:pageBlock title="Tracciamento nuova segnalazione">
+        <apex:pageBlockSection >
+            <apex:inputField value="{!Case.Type}" />
+            <apex:inputField value="{!Case.Priority}"/> 
+            <apex:inputTextarea value="{!Case.description}"/>          
+        </apex:pageBlockSection>
+    </apex:pageBlock>
+</apex:form>
+<apex:relatedList subject="{!Case}"  list="NotesAndAttachments" />
+<apex:relatedList list="NOTESANDATTACHMENTS"/>
+
+<apex:relatedList list="NotesAndAttachments">
+  <apex:facet name="header">&nbsp;</apex:facet>    <!--This line of code removing the attachment header-->        
+ </apex:relatedList>
+</apex:page>

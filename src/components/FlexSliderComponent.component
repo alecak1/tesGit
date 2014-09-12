@@ -1,0 +1,27 @@
+<apex:component >
+ 
+    <script language="JavaScript" type="text/javascript">
+        function updateHiddenValue(value, eId){
+            var e = document.getElementById(eId);
+            e.value = value;
+        }
+    </script>
+ 
+    <apex:attribute name="minSliderValue" description="Minimum slider value" type="Integer" required="true"/>
+    <apex:attribute name="maxSliderValue" description="Maximum slider value" type="Integer" required="true"/>
+    <apex:attribute name="startSliderValue" description="Starting value of the slider" type="Integer" required="false" />
+    <apex:attribute name="slideInterval" description="The tick interval that the slider can be moved" type="Integer" default="1" required="false" />
+    <apex:attribute name="callbackFunction" description="The name of the JavaScript function that is called by the Flex components and passes the bound value of the slider. By default the component uses updateHiddenField but you can override it with your own." type="String" default="updateHiddenValue" required="false" />
+    <apex:attribute name="boundDomId" description="The $Component id of the DOM element bound to the slider value's. The slider's change event passes the value of boundDomId back to the JavaScript function." type="String" required="false"/>
+    <apex:attribute name="height" description="The height of the slider" type="Integer" default="50" required="false" />
+    <apex:attribute name="width" description="The width of the slider" type="Integer" default="200" required="false" />
+    <apex:attribute name="bgColor" description="The background color of the flex component so it matches the page. Defaults to Salesforce gray." type="String" default="#F3F3EC" required="false" />
+ 
+    <apex:flash src="{!$Resource.FlexSlider}"
+        height="{!height}"
+        width="{!width}"
+        flashVars="minSliderValue={!minSliderValue}&maxSliderValue={!maxSliderValue}
+                &startSliderValue={!startSliderValue}&slideInterval={!slideInterval}
+                &callbackFunction={!callbackFunction}&boundDomId={!boundDomId}&bgColor={!bgColor}" />
+ 
+</apex:component>

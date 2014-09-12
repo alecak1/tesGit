@@ -1,0 +1,71 @@
+<apex:page controller="SkillsMatrixController" sidebar="false"
+  tabStyle="Skill__c">
+  <apex:stylesheet value="http://yui.yahooapis.com/combo?2.7.0/build/container/assets/skins/sam/container.css" />
+  <apex:includeScript value="http://yui.yahooapis.com/combo?2.7.0/build/yahoo-dom-event/yahoo-dom-event.js&2.7.0/build/animation/animation-min.js&2.7.0/build/container/container-min.js" /> 
+  <style>
+  .resourceLabel { padding-right: 15px; }
+  .goButton { margin-left: 10px; }
+  </style>
+  <script>
+    var overlay;
+    function showOverlay(e) {
+      overlay = new YAHOO.widget.Overlay("{!$Component.compareSkills}", { xy:[525, e.pageY],
+                                        visible:false,
+                                        width:"450px",
+                                        zIndex:1000,
+                                        effect:{effect:YAHOO.widget.ContainerEffect.FADE,duration:0.25} } );
+      overlay.render("{!$Component.form}");
+      overlay.show();
+    }
+    function hideOverlay() {
+      if (overlay != null) {
+        overlay.hide();
+        overlay = null;
+      }
+    }
+  </script>
+  <apex:sectionHeader title="Services Manager"
+    subtitle="Skills Matrix" />
+  <apex:pageMessages />
+
+  <apex:form id="form">
+  <apex:outputLabel value="Resource:" for="selectedResourceId"
+    styleClass="resourceLabel" />
+  <apex:selectList id="selectedResourceId" title="Resource"
+    value="{!selectedResourceId}" size="1">
+    <apex:selectOptions value="{!resourceOptions}" />
+  </apex:selectList>
+  <apex:commandButton action="{!refresh}" value="Go!"
+    styleClass="goButton" />
+    
+  <p />
+  <apex:pageBlock title="Skills">
+    <apex:pageBlockButtons >
+      <apex:commandButton action="{!save}" value="Save"
+        disabled="{!NOT isEditable}" />
+    </apex:pageBlockButtons>
+    <apex:pageBlockTable value="{!selectedSkills}" var="skill"
+      rendered="{!selectedResourceId != ''}">
+      <apex:column value="{!skill.Type__c}" />
+      <apex:column headerValue="Rating">
+        <apex:image value="/img/msg_icons/info16.png" style="margin-top: 2px; margin-right: 10px;">
+          <apex:actionSupport event="onmouseover" action="{!refreshCompareSkills}" rerender="compareSkills"
+            oncomplete="showOverlay(event);" onsubmit="hideOverlay();">
+            <apex:param name="p1" value="{!skill.Type__c}" assignTo="{!selectedSkillType}" />
+          </apex:actionSupport>
+        </apex:image>
+        <apex:outputField value="{!skill.Rating__c}"
+          rendered="{!NOT isEditable}" />
+        <apex:inputField value="{!skill.Rating__c}"
+          rendered="{!isEditable}" />
+      </apex:column>
+      <apex:column value="{!skill.LastModifiedDate}" />
+    </apex:pageBlockTable>
+  </apex:pageBlock>
+  </apex:form>
+
+  <apex:outputPanel id="compareSkills" style="visibility: hidden;">
+    <c:CompareSkillsComponent skillType="{!selectedSkillType}" resourceId="{!selectedResourceId}" />
+  </apex:outputPanel>
+
+</apex:page>

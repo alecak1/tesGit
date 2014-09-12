@@ -1,0 +1,85 @@
+<apex:page docType="html-5.0" sidebar="false" standardStylesheets="false" showHeader="false" cache="true" controller="ArlanTT_SiteLoginController"> 
+<!--[if lt IE 7 ]> <html lang="en" class="ie6 ielt8"> <![endif]-->
+<!--[if IE 7 ]>    <html lang="en" class="ie7 ielt8"> <![endif]-->
+<!--[if IE 8 ]>    <html lang="en" class="ie8"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--> <html lang="en"> <!--<![endif]-->
+<head>
+<meta charset="utf-8"></meta>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"></meta>
+<title>Login</title>
+
+<style>
+body {
+  padding-top: 40px;
+  padding-bottom: 40px;
+  background: #fff;
+}
+
+.form-signin {
+  max-width: 330px;
+  padding: 15px;
+  margin: 0 auto;
+  border: 1px solid #8b8b8b;
+  background: transparent;
+}
+.form-signin .form-signin-heading,
+.form-signin .checkbox {
+  margin-bottom: 10px;
+}
+.form-signin .checkbox {
+  font-weight: normal;
+}
+.form-signin .form-control {
+  position: relative;
+  font-size: 16px;
+  height: auto;
+  padding: 10px;
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
+}
+.form-signin .form-control:focus {
+  z-index: 2;
+}
+.form-signin input[type="text"] {
+  margin-bottom: -1px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.form-signin input[type="password"] {
+  margin-bottom: 10px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+</style>
+
+</head>
+<body>
+    <div class="container">
+        <apex:form id="loginForm" styleClass="form-signin">
+            <h2 class="form-signin-heading" style="text-align: center;">Login</h2>
+            <apex:inputText styleClass="form-control" value="{!username}" html-placeholder="Username" required="true" />
+            <apex:inputSecret styleClass="form-control" value="{!password}" html-placeholder="Password" required="true" />
+            
+            <label class="checkbox">
+              <input type="checkbox" value="remember-me"> Remember me</input>
+            </label>
+            
+            <apex:commandButton action="{!login}" value="Log in" styleClass="btn btn-lg btn-primary btn-block" />
+            
+            <a href="#">Lost your password?</a>
+            
+            <div style="text-align: left;">
+                <apex:pageMessages />
+            </div>
+        
+        </apex:form><!-- form -->
+       
+    </div><!-- container -->
+    
+    
+<apex:stylesheet value="{!URLFOR($Resource.bootstrap_lib, 'dist/css/bootstrap.css')}" />
+</body>
+</html>
+</apex:page>

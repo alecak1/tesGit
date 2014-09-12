@@ -1,0 +1,60 @@
+<apex:page showHeader="false" controller="CaseHistoryController">
+	<apex:includeScript value="{!URLFOR($Resource.CaseHistoryResources, 'js/jquery-1.6.4.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.CaseHistoryResources, 'js/jquery.tablesorter.min.js')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.CaseHistoryResources, 'css/style.css')}"/>
+<script type="text/javascript">
+$(document).ready(function() 
+    { 
+        $("#sortThis").tablesorter(); 
+    } 
+); 
+</script>
+   <div id="caseHeaderImg" style="background: #B7A752 url(/img/sprites/master.png) no-repeat 4px -982px; height:32px; width:100%; padding:8px 4px 0px 40px; font-size:14px; font-weight: bold; color:white;">Case: {!aCase.CaseNumber}</div>
+   
+	 <apex:pageblock tabStyle="Case" ><b>
+	  <apex:panelGrid columns="2" id="top">
+	   <apex:outputText value="SUBJECT:"/> 
+       <apex:outputText value="{!aCase.Subject}"/>
+	   <apex:outputText value="ACCOUNT NAME:"/>  
+	     <apex:outputText ><apex:outputLink value="/{!aCase.AccountId}" id="AccountLink">{!aCase.Account.Name}</apex:outputLink></apex:outputText>
+	   <apex:outputText value="CONTACT NAME: "/>
+	     <apex:outputText ><apex:outputLink value="/{!aCase.ContactId}" id="ContactLink">{!aCase.Contact.Name}</apex:outputLink></apex:outputText>
+	   </apex:panelGrid>
+ </b> </apex:pageblock>
+ 
+ <table id="sortThis" class="tablesorter">
+ 		<thead>
+			<tr>
+				<th nowrap="true">Created By&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+				<th nowrap="true">Owner&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+				<th nowrap="true">Subject</th>
+				<th nowrap="true">Type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+				<th nowrap="true">Created&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+				<th nowrap="true">Due&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+			</tr>
+		</thead>
+		<tbody>
+			<apex:repeat value="{!CHIlist}" var="list">
+				<tr>
+					<td><apex:outputText value="{!list.createdName}" /></td>
+					<td><apex:outputText value="{!list.ownerName}"/></td>
+					<td>
+						<apex:outputText value="{!LEFT(list.Subject, 200)}" /><apex:outputText value="..." rendered="{!LEN(list.Subject)> 200}" />
+						<apex:outputText value="{!LEFT(list.taskDescription, 500)}{!IF(LEN(list.taskDescription)>500,"...","")}" rendered="{!ISBLANK(list.mainId)}"/>
+						
+						
+						</td>
+					
+					
+					
+					<td><apex:image id="imageType" url="{!URLFOR($Resource.CaseHistoryResources, 'images/'+list.itemType)}" />{!list.itemTypeName}</td>
+					<td><apex:outputText value="{!list.createDateFix}"/></td>
+					<td><apex:outputText value="{!list.dueDateFix}"/></td>
+				</tr>
+			</apex:repeat>
+		</tbody> 
+ </table>
+
+
+
+</apex:page>

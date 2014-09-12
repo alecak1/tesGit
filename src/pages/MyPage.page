@@ -1,0 +1,100 @@
+<apex:page standardController="Resource__c">
+<apex:includeScript value="/soap/ajax/15.0/connection.js" />
+<apex:includeScript value="/soap/ajax/15.0/apex.js" />
+<h1>Your page is here</h1>
+<!-- 
+<script>
+sforce.connection.init('{!$Api.Session_ID}', '{!$Api.Partner_Server_URL_150}');
+function doIt() {
+  var result = document.getElementById('result');
+  result.innerHTML = sforce.apex.executeAnonymous(document.getElementById('{!$Component.form:foo}').value);
+}
+</script>
+<apex:form id="form">
+<apex:inputTextArea id="foo" />
+<a onclick="doIt();">Do something</a>
+<div id="result"></div>
+</apex:form>
+<!-- <c:GoogleMap address="1 market st. san francisco, ca" /> -->
+<!-- 
+<apex:include pageName="SkillsMatrix" />
+<apex:insert name="header">
+<h1>Header</h1>
+</apex:insert>
+<hr /><apex:insert name="body" />
+<hr /><apex:insert name="footer" />
+-->
+
+<!-- 
+<script type="text/javascript">
+    function start() {
+      document.getElementById("myStatus").innerHTML = 'Started';
+    }
+    function stop() {
+      document.getElementById("myStatus").innerHTML = 'Stopped';
+    }
+  </script>
+  <apex:outputPanel id="result">
+    <apex:pageMessages />
+  </apex:outputPanel>
+  <apex:actionStatus id="status" onStart="start();" onStop="stop();" />
+  <div id="myStatus"></div>
+  <apex:form >
+    <apex:inputText >
+      <apex:actionSupport action="{!timesTwo}" event="onfocus" reRender="result" status="status" />
+    </apex:inputText>
+  </apex:form>
+-->
+<!-- 
+  <apex:actionStatus id="status">
+    <apex:facet name="stop">
+      <h2>Stopped</h2>
+    </apex:facet>
+    <apex:facet name="start">
+      <h2>Started</h2>
+    </apex:facet>
+  </apex:actionStatus>
+-->
+<!-- 
+<apex:flash src="{!$Resource.FlexDemo}" height="500" width="100%"
+        flashvars="session_id={!$Api.Session_ID}&server_url={!$Api.Partner_Server_URL_150}" />
+-->
+<!-- 
+<apex:form >
+<apex:pageMessages id="messages" />
+<apex:commandButton action="{!increment}" value="+1" rerender="result, messages" />
+<apex:outputPanel id="result">The value is: {!value}</apex:outputPanel>
+</apex:form>
+ -->
+<!-- 
+<apex:composition template="SiteTemplate">
+<apex:define name="header">my header</apex:define>
+<apex:define name="body">hello</apex:define>
+</apex:composition>
+
+-->
+<!--
+<apex:form >
+Your name: <apex:inputText value="{!name}" />
+<apex:outputText value="{!message}" />
+<apex:commandButton action="{!hello}" value="Say Hi" />
+</apex:form>
+-->
+<!-- 
+  <apex:form >
+  <apex:pageBlock title="Sample Code">
+        <apex:pageBlockButtons >
+        	<apex:commandButton action="{!doSomething}" value="Do Something" />
+		</apex:pageBlockButtons>   
+		<apex:pageBlockTable value="{!resources}" var="resource">
+<apex:column headerValue="Selected">
+  <apex:inputCheckbox value="{!resource.selected}" />
+</apex:column>
+<apex:column headerValue="Resource Name">
+  {!resource.data.Name}
+</apex:column>
+		</apex:pageBlockTable>      
+  </apex:pageBlock>
+</apex:form>
+-->
+</apex:page>

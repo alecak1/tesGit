@@ -1,0 +1,18 @@
+<apex:component >
+    <apex:attribute name="apiSessionId" access="public" description="The reporting API session ID, if not specified defaults to $Api.Session_ID" type="String" required="false" />
+    <apex:attribute name="reportId" access="public" description="The ID of the report to visualize" type="String" required="false" />
+    <apex:attribute name="chartType" access="public" description="The type of chart to draw" type="String" required="false" />
+    <apex:attribute name="chartState" access="public" description="The visual state of the chart" type="String" required="false" />
+
+    <apex:attribute name="reportApiVersion" access="public" description="The version of the reporting API to use, defaults to v28.0" type="String" required="false" />
+    <apex:attribute name="reportApiUrl" access="public" description="The base URL of the reporting service" type="String" required="false" />
+    <apex:attribute name="width" access="public" description="The width of the control" type="String" required="false" />
+    <apex:attribute name="height" access="public" description="The height of the control" type="String" required="false" />
+
+    <!-- IS THIS IN USE ANYWHERE?  The src attribute below may not work
+         if this is a managed package.  -->
+
+
+    <apex:iframe height="{!height}" width="{!width}" src="/apex/ChartPage?apiSessionId={!URLENCODE(apiSessionId)}&reportId={!URLENCODE(reportId)}&chartType={!URLENCODE(chartType)}&chartState={!URLENCODE(chartState)}&reportApiVersion={!URLENCODE(reportApiVersion)}&reportApiUrl={!URLENCODE(reportApiUrl)}"></apex:iframe>
+
+</apex:component>

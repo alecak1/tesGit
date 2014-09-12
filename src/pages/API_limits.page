@@ -1,0 +1,56 @@
+<apex:page controller="inc_ctrl_Governor_Limits">
+
+    <apex:pageBlock id="pbLimits" title="Limits">
+    
+        <apex:pageBlockSection columns="1">
+        
+            <apex:pageBlockSectionItem >
+            
+                Queries
+                <apex:outputPanel >
+                    {!queries} / {!limitQueries} ( {!queryPerc}% )
+                </apex:outputPanel>
+            
+            </apex:pageBlockSectionItem>
+            
+            <apex:pageBlockSectionItem >
+            
+                Query Rows
+                <apex:outputPanel >
+                    {!queryRows} / {!limitQueryRows} ( {!queryRowsPerc}% )
+                </apex:outputPanel>
+            
+            </apex:pageBlockSectionItem>
+            
+            <apex:pageBlockSectionItem >
+            
+                DML Statements
+                <apex:outputPanel >
+                    {!dmlStatements} / {!limitDmlStatements} ( {!dmlStatementsPerc}% )
+                </apex:outputPanel>
+            
+            </apex:pageBlockSectionItem>
+            
+            <apex:pageBlockSectionItem >
+            
+                DML Rows
+                <apex:outputPanel >
+                    {!dmlRows} / {!limitDmlRows} ( {!dmlRowsPerc}% )
+                </apex:outputPanel>
+            
+            </apex:pageBlockSectionItem>
+            
+            <apex:pageBlockSectionItem >
+            
+                Script Statements
+                <apex:outputPanel >
+                    {!scriptStatements} / {!limitScriptStatements} ( {!scriptStatementsPerc}% )
+                </apex:outputPanel>
+            
+            </apex:pageBlockSectionItem>
+        
+        </apex:pageBlockSection>
+    
+    </apex:pageBlock>
+
+</apex:page>
