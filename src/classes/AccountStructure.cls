@@ -54,6 +54,9 @@ public with sharing class AccountStructure{
         
         System.assertNotEquals( currentId, null, 'sObject ID must be provided' );
         asm = formatObjectStructure( CurrentId );
+
+        System.debug('COMMIT MASTER.BRANCH2 1');
+        System.debug('COMMIT MASTER.BRANCH2 2');
         
         return asm;
     }

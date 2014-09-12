@@ -58,9 +58,9 @@
         "fileName": "unpackaged/classes/AccountStructure.cls", 
         "fullName": "AccountStructure", 
         "id": "01pD0000001D93rIAC", 
-        "lastModifiedById": "005D00000024K23IAE", 
-        "lastModifiedByName": "Rocco Sorrentino", 
-        "lastModifiedDate": "2014-06-30 15:12:43", 
+        "lastModifiedById": "005D00000022cQQIAY", 
+        "lastModifiedByName": "Alessandro Caio", 
+        "lastModifiedDate": "2014-09-12 10:10:02", 
         "mmState": "clean", 
         "type": "ApexClass"
     }, 
